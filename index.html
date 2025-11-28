@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS re:Invent 2025 排程表 (Excel版)</title>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        /* 基礎設定 */
+        body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; margin: 0; padding: 10px; background: #f4f4f4; color: #333; }
+        
+        /* 標題與控制區 */
+        h1 { color: #232f3e; border-bottom: 3px solid #ff9900; padding-bottom: 10px; font-size: 1.4rem; margin-top: 0; }
+        .control-panel { background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 10px; position: sticky; top: 0; z-index: 100; }
+        
+        /* 下拉選單 */
+        label { font-weight: bold; display: block; margin-bottom: 5px; font-size: 1rem; }
+        select { font-size: 16px; padding: 10px; width: 100%; border: 1px solid #ccc; border-radius: 4px; background: #fff; }
+        
+        /* 表格容器 */
+        .table-container { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        
+        /* 表頭 */
+        th { background: #232f3e; color: white; padding: 12px 8px; text-align: left; font-size: 0.9rem; white-space: nowrap; }
+        
+        /* 表格內容 */
+        td { padding: 12px 8px; border-bottom: 1px solid #eee; vertical-align: top; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; cursor: pointer; }
+        tr:last-child td { border-bottom: none; }
+        
+        /* 亮顯樣式 */
+        .highlight { background: #fffbe6; border-left: 5px solid #ff9900; }
+        .highlight td { color: #232f3e; }
+        .highlight td:first-child { font-weight: bold; } /* 時間加粗 */
+
+        /* 隱藏的詳細說明列 */
+        .detail-row { display: none; background-color: #f9f9f9; }
+        .detail-cell { padding: 10px 15px; font-size: 0.9rem; color: #555; border-bottom: 1px solid #ddd; }
+        
+        /* 載入中遮罩 */
+        #loading { text-align: center; padding: 20px; font-weight: bold; color: #666; }
+
+        /* 欄位寬度與隱藏邏輯 */
+        /* 電腦版預設 */
+        th:nth-child(1) { width: 15%; } /* 時間 */
+        th:nth-child(2) { width: 8%; }  /* ID */
+        th:nth-child(3) { width: 30%; } /* 名稱 */
+        th:nth-child(4) { width: 20%; } /* 地點 */
+        th:nth-child(5) { width: 27%; } /* 說明 */
+
+        /* 手機版 (直式) */
+        @media (max-width: 600px) {
+            th:nth-child(2), td:nth-child(2) { display: none; } /* 隱藏 ID */
+            th:nth-child(5), td:nth-child(5) { display: none; } /* 隱藏 說明 (改點擊展開) */
+            
+            th:nth-child(1) { width: 22%; } /* 時間 */
+            th:nth-child(3) { width: 45%; } /* 名稱 */
+            th:nth-child(4) { width: 33%; } /* 地點 */
+            
+            h1 { font-size: 1.2rem; }
+            td { padding: 10px 5px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="control-panel">
+        <label for="userSelect">👤 請選擇參加者：</label>
+        <select id="userSelect" onchange="renderTable()">
+            <option value="" disabled selected>載入資料中...</option>
+        </select>
+        <div style="font-size:0.8rem; color:#666; margin-top:5px; text-align:right;">(💡 手機版點擊議程可查看說明)</div>
+    </div>
+
+    <div class="table-container">
+        <div id="loading">正在讀取 Excel 檔案...</div>
+        <table id="scheduleTable" style="display:none;">
+            <thead>
+                <tr>
+                    <th>時間</th>
+                    <th>ID</th>
+                    <th>議程名稱</th>
+                    <th>地點</th>
+                    <th>中文說明</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let scheduleData = [];
+        let allAttendees = new Set(); // 使用 Set 自動過濾重複的人名
+
+        // 1. 讀取 Excel 檔案函式
+        async function loadExcel() {
+            try {
+                // 這裡指定要讀取的檔名，必須跟您的 Excel 檔名一樣
+                const response = await fetch('./schedule.xlsx'); 
+                
+                if (!response.ok) {
+                    throw new Error("無法找到 schedule.xlsx，請確認檔案是否已上傳且名稱正確。");
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, {type: 'array'});
+                
+                // 讀取第一個工作表
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // 轉換為 JSON
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                
+                processData(jsonData);
+
+            } catch (error) {
+                document.getElementById('loading').innerHTML = "❌ 讀取失敗：<br>" + error.message + "<br><br>(請注意：此功能需上傳至伺服器才能運作，無法直接在電腦開啟)";
+                document.getElementById('loading').style.color = "red";
+            }
+        }
+
+        // 2. 處理資料
+        function processData(data) {
+            scheduleData = data;
+            
+            // 收集所有參加者名單
+            data.forEach(row => {
+                if (row.Users) {
+                    // 將 "王小明、李大華" 切割成陣列
+                    // 支援頓號、逗號或空格分隔
+                    const names = row.Users.toString().split(/[、,，\s]+/);
+                    names.forEach(name => {
+                        if (name && name.trim() !== "") {
+                            allAttendees.add(name.trim());
+                        }
+                    });
+                }
+            });
+
+            // 初始化選單
+            initMenu();
+            // 顯示表格
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('scheduleTable').style.display = 'table';
+            renderTable();
+        }
+
+        // 3. 初始化下拉選單
+        function initMenu() {
+            const select = document.getElementById('userSelect');
+            select.innerHTML = '<option value="ALL">📋 顯示所有議程</option>';
+            
+            // 將 Set 轉為 Array 並排序
+            const sortedAttendees = Array.from(allAttendees).sort();
+            
+            sortedAttendees.forEach(name => {
+                if (name === "全員") return; // "全員" 不需要出現在選單中，會自動處理
+                let option = document.createElement('option');
+                option.value = name;
+                option.textContent = "👤 " + name;
+                select.appendChild(option);
+            });
+        }
+
+        // 4. 渲染表格
+        function renderTable() {
+            const select = document.getElementById('userSelect');
+            const tbody = document.getElementById('tableBody');
+            const selectedUser = select.value;
+            
+            tbody.innerHTML = "";
+            let count = 0;
+
+            scheduleData.forEach(item => {
+                let showRow = false;
+                let highlightRow = false;
+
+                // 處理 Users 欄位 (可能為 undefined)
+                let itemUsers = item.Users ? item.Users.toString() : "";
+                let isAll = (item.All && (item.All === "X" || item.All === true || item.All === "TRUE")) || itemUsers.includes("全員");
+
+                if (selectedUser === "ALL") {
+                    showRow = true;
+                } else {
+                    // 檢查是否包含選取的人
+                    if (isAll || itemUsers.includes(selectedUser)) {
+                        showRow = true;
+                        highlightRow = true;
+                    }
+                }
+
+                if (showRow) {
+                    let tr = document.createElement('tr');
+                    if (highlightRow) tr.classList.add('highlight');
+
+                    // 點擊展開詳細說明
+                    tr.onclick = function() {
+                        var nextRow = this.nextElementSibling;
+                        if (nextRow && nextRow.className.indexOf('detail-row') > -1) {
+                            nextRow.style.display = (nextRow.style.display === 'table-row') ? 'none' : 'table-row';
+                        }
+                    };
+
+                    // 填入資料 (防止 undefined)
+                    tr.innerHTML = `
+                        <td>${item.Time || ''}</td>
+                        <td>${item.ID || ''}</td>
+                        <td>${item.Name || ''}</td>
+                        <td>${item.Location || ''}</td>
+                        <td>${item.Desc || ''}</td>
+                    `;
+                    tbody.appendChild(tr);
+
+                    // 建立詳細資訊列 (給手機版點擊用)
+                    if (item.Desc) {
+                        let trDetail = document.createElement('tr');
+                        trDetail.className = 'detail-row';
+                        trDetail.innerHTML = `<td colspan="5" class="detail-cell"><strong>📝 說明：</strong>${item.Desc}</td>`;
+                        tbody.appendChild(trDetail);
+                    }
+                    count++;
+                }
+            });
+
+            if (count === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#888;">沒有符合的議程</td></tr>';
+            }
+        }
+
+        // 啟動
+        loadExcel();
+
+    </script>
+
+</body>
+</html>
