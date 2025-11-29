@@ -3,203 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AWS re:Invent 2025 行程表</title>
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <title>AWS re:Invent 2025 個人行程表</title>
     <style>
-        /* --- 基礎樣式 --- */
-        body {
-            font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
-            background-color: #f8f9fa;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            border-radius: 8px;
-        }
-
-        h1 {
-            color: #232f3e;
-            border-bottom: 3px solid #ff9900; /* AWS Orange */
-            padding-bottom: 10px;
-            margin-top: 0;
-        }
-
-        /* --- 檔案上傳區 --- */
-        .upload-box {
-            background: #eef;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            border: 1px dashed #99c;
-            text-align: center;
-        }
-
-        /* --- 表格樣式 --- */
-        table {
-            width: 1000px; /* 固定寬度或 100% */
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #232f3e; /* AWS Dark Blue */
-            color: white;
-            position: sticky;
-            top: 0;
-        }
-
-        /* --- 關鍵修改：日期標題列樣式 --- */
-        tr.date-header {
+        body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 8px; }
+        h1 { color: #232f3e; border-bottom: 3px solid #ff9900; padding-bottom: 10px; margin-top: 0; }
+        
+        /* 表格樣式 */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; vertical-align: top; }
+        th { background-color: #232f3e; color: white; position: sticky; top: 0; z-index: 10; }
+        
+        /* 日期分組標題列 (您的需求) */
+        tr.date-header { 
             background-color: #e3f2fd !important; /* 淺藍色底 */
-            color: #0d47a1; /* 深藍色字 */
-            font-weight: bold;
+            color: #1565c0; /* 深藍色字 */
+            font-weight: bold; 
             font-size: 1.1em;
             border-top: 2px solid #90caf9;
         }
-        
-        tr.date-header td {
-            padding-top: 15px;
-            padding-bottom: 15px;
-        }
+        tr.date-header td { padding: 15px 10px; }
 
-        /* 內容行樣式 */
-        tr.session-row:hover {
-            background-color: #f5f5f5;
-        }
-
-        /* 欄位寬度調整 */
-        .col-time { width: 15%; white-space: nowrap; }
-        .col-id { width: 10%; font-weight: bold; color: #d13212; }
-        .col-name { width: 40%; font-weight: bold; }
-        .col-loc { width: 20%; color: #666; font-size: 0.9em; }
+        /* 一般列樣式 */
+        tr.session-row:hover { background-color: #f5f5f5; cursor: pointer; }
         
-        /* 手機響應式調整 */
-        @media (max-width: 600px) {
-            th, td { display: block; width: 100%; }
-            tr.date-header { text-align: center; }
-            .col-time { color: #d13212; font-weight: bold; }
+        /* 欄位寬度 */
+        .col-time { width: 140px; white-space: nowrap; font-weight: bold; color: #444; }
+        .col-id { width: 80px; font-weight: bold; color: #d13212; }
+        .col-title { font-weight: bold; }
+        .col-loc { width: 200px; color: #666; font-size: 0.9em; }
+        
+        /* 隱藏的詳細資訊列 */
+        .detail-row { display: none; background-color: #fafafa; }
+        .detail-content { padding: 15px; color: #555; line-height: 1.6; border-left: 4px solid #ff9900; margin: 5px 0; }
+
+        /* 手機版響應式 */
+        @media (max-width: 768px) {
+            th { display: none; } /* 手機版隱藏表頭 */
+            tr.date-header { display: table-row; }
+            tr.session-row { display: flex; flex-wrap: wrap; border-bottom: 1px solid #eee; padding: 10px 0; }
+            .col-time { width: 100%; color: #d13212; margin-bottom: 4px; }
+            .col-id { width: auto; margin-right: 10px; background: #eee; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
+            .col-title { width: 100%; margin-bottom: 5px; font-size: 1.1em; }
+            .col-loc { width: 100%; font-size: 0.85em; display: block; }
+            .detail-row td { padding: 0; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>AWS re:Invent 2025 個人行程表</h1>
-    
-    <div class="upload-box">
-        <p>請選擇您的 Excel (.xlsx) 或 CSV 檔案：</p>
-        <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" />
+    <h1>AWS re:Invent 2025 行程表</h1>
+    <div style="text-align: right; color: #666; font-size: 0.9em; margin-bottom: 10px;">
+        點擊課程可查看詳細內容
     </div>
-
-    <div id="status" style="color:red; margin-bottom:10px;"></div>
-
     <table id="scheduleTable">
         <thead>
             <tr>
                 <th>時間</th>
-                <th>代號</th>
+                <th>ID</th>
                 <th>課程名稱</th>
                 <th>地點</th>
             </tr>
         </thead>
         <tbody id="tableBody">
-            <tr><td colspan="4" style="text-align:center; color:#999;">請上傳檔案以檢視行程...</td></tr>
-        </tbody>
+            </tbody>
     </table>
 </div>
 
 <script>
-    document.getElementById('fileInput').addEventListener('change', handleFile, false);
+    // 這裡內建了您選取的課程資料
+    const sessionData = [
+        {"date": "Sunday, Nov 30", "time": "10:00 AM - 6:00 PM PST", "id": "ACT005-R", "title": "AWS BuilderCards: Learn about AWS security while you play!", "loc": "Caesars Forum | Level 1 | West Alcove | South", "desc": "Discover cloud architecture through BuilderCards at our play area..."},
+        {"date": "Sunday, Nov 30", "time": "10:00 AM - 6:00 PM PST", "id": "ACT010-R", "title": "The Fragrance Lab", "loc": "Venetian | Level 2 | Expo Upper Foyer | Fragrance Lab", "desc": "A custom fragrance generated by Amazon Nova in Amazon Bedrock..."},
+        {"date": "Sunday, Nov 30", "time": "10:00 AM - 8:00 PM PST", "id": "ACT006-R", "title": "re:Collection Club", "loc": "Venetian | Level 2 | Hall C | re:Collection Club", "desc": "Start your re:Invent collection! Claim your tenure pin..."},
+        {"date": "Monday, Dec 1", "time": "8:30 AM - 9:30 AM PST", "id": "IND3306", "title": "From fragmented to unified platform: Rocket Companies data and AI journey", "loc": "Venetian | Level 3 | Lido 3006", "desc": "Enterprises seek to unify data access across the organization..."},
+        {"date": "Monday, Dec 1", "time": "8:30 AM - 9:30 AM PST", "id": "ANT203", "title": "Enabling AI innovation with Amazon SageMaker Unified Studio", "loc": "Venetian | Level 3 | Lido 3106", "desc": "Many enterprises want to build a culture of AI innovation..."},
+        {"date": "Thursday, Dec 4", "time": "2:30 PM - 3:30 PM PST", "id": "ANT319", "title": "Building a data mesh with Amazon DataZone", "loc": "MGM | Level 1 | Grand 119", "desc": "Learn how to implement a data mesh architecture..."},
+        {"date": "Thursday, Dec 4", "time": "3:30 PM - 3:50 PM PST", "id": "NTA204", "title": "TDK SensEI built scalable IoT platform with AWS for sensor insights", "loc": "Venetian | Level 2 | Hall B | Expo | Theater 4", "desc": "TDK SensEI, launched in July 2024, partnered with AWS..."},
+        {"date": "Thursday, Dec 4", "time": "4:00 PM - 5:00 PM PST", "id": "BIZ224", "title": "Zoom's gen AI journey: Transforming workplace collaboration", "loc": "MGM | Level 3 | Chairman's 360", "desc": "Hear from a customer speaker who leverages ISV application..."},
+        {"date": "Friday, Dec 5", "time": "8:30 AM - 9:30 AM PST", "id": "IND326", "title": "Commonwealth Bank of Australia: Analytics & AI in the cloud", "loc": "Caesars Forum | Level 1 | Summit 212 | Content Hub | Pink Theater", "desc": "As Australia’s largest bank, CBA is reimagining its data landscape..."},
+        {"date": "Friday, Dec 5", "time": "10:00 AM - 11:00 AM PST", "id": "ARC402", "title": "Build a generative AI architecture for scientific discovery", "loc": "Caesars Forum | Level 1 | Summit 212 | Content Hub | Turquoise Theater", "desc": "In this session, learn how the UK Met Office built a generative AI..."},
+        {"date": "Friday, Dec 5", "time": "10:00 AM - 11:00 AM PST", "id": "IND208", "title": "Reclaiming Clinical Time: How Veradigm Uses AI to Transform Workflows", "loc": "Caesars Forum | Level 1 | Summit 212 | Content Hub | Pink Theater", "desc": "Discover how Veradigm's Practice Fusion EHR leverages AWS..."},
+        {"date": "Friday, Dec 5", "time": "10:30 AM - 11:30 AM PST", "id": "IND341-R1", "title": "Behind the curtain: Generative AI observability in financial services", "loc": "Caesars Forum | Level 1 | Academy 414", "desc": "Financial institutions deploying generative AI seek to effectively track..."},
+        {"date": "Friday, Dec 5", "time": "11:30 AM - 12:30 PM PST", "id": "SEC402", "title": "Ransomware resilience: Architecting for recovery with AWS Storage", "loc": "Caesars Forum | Level 1 | Summit 212 | Content Hub | Turquoise Theater", "desc": "Ransomware poses a critical threat to data integrity..."},
+        {"date": "Friday, Dec 5", "time": "11:30 AM - 12:30 PM PST", "id": "TNC210", "title": "Explore the Agentic Capabilities of Amazon Quick Suite", "loc": "Venetian | Level 3 | Lido 3006", "desc": "In this breakout session, discover the latest features of Amazon Quick Suite..."},
+        {"date": "Friday, Dec 5", "time": "11:30 AM - 12:30 PM PST", "id": "SPS316", "title": "Koch Industries' data migration success with AWS Countdown Premium", "loc": "Venetian | Level 3 | Lido 3106", "desc": "See how Koch Industries used AWS Countdown Premium..."}
+    ];
 
-    function handleFile(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
-            
-            // 讀取第一個工作表
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            
-            // 轉換為 JSON
-            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-            
-            renderTable(jsonData);
-        };
-        reader.readAsArrayBuffer(file);
+    // 輔助函式：日期字串轉數值方便排序 (處理跨月份)
+    function getDateValue(dateStr) {
+        if (dateStr.includes("Nov 30")) return 1;
+        if (dateStr.includes("Dec 1")) return 2;
+        if (dateStr.includes("Dec 2")) return 3;
+        if (dateStr.includes("Dec 3")) return 4;
+        if (dateStr.includes("Dec 4")) return 5;
+        if (dateStr.includes("Dec 5")) return 6;
+        return 99;
     }
 
-    function renderTable(data) {
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
+    // 輔助函式：時間字串轉數值 (處理 AM/PM)
+    function getTimeValue(timeStr) {
+        // 格式範例: "8:30 AM - 9:30 AM PST"
+        let parts = timeStr.split(' - ')[0].split(' '); // ["8:30", "AM"]
+        let timeParts = parts[0].split(':'); // ["8", "30"]
+        let hour = parseInt(timeParts[0]);
+        let min = parseInt(timeParts[1]);
+        let period = parts[1]; // "AM" or "PM"
         
-        // 1. 資料清洗與對應 (Mapping)
-        // 根據您的 CSV 欄位名稱進行對應
-        let sessions = data.map(row => {
-            // 嘗試抓取常見欄位名稱 (容錯處理)
-            return {
-                Date: row['日期'] || row['Date'] || '',
-                Time: row['時間'] || row['Time'] || '',
-                ID: row['Session ID'] || row['Code'] || '',
-                Name: row['課程名稱'] || row['Title'] || '',
-                Location: row['地點'] || row['Location'] || '',
-                Selected: row['已選取'] || '' // 如果有這個欄位，可以用來過濾
-            };
-        }).filter(item => item.ID); // 移除空行
+        if (period === "PM" && hour !== 12) hour += 12;
+        if (period === "AM" && hour === 12) hour = 0;
+        
+        return hour * 60 + min;
+    }
 
-        // 2. 排序 (先按日期，再按時間)
-        sessions.sort((a, b) => {
-            if (a.Date !== b.Date) return a.Date.localeCompare(b.Date);
-            return a.Time.localeCompare(b.Time);
-        });
+    // 1. 排序資料
+    sessionData.sort((a, b) => {
+        let dateA = getDateValue(a.date);
+        let dateB = getDateValue(b.date);
+        if (dateA !== dateB) return dateA - dateB;
+        
+        return getTimeValue(a.time) - getTimeValue(b.time);
+    });
 
-        if (sessions.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4">讀取不到資料，請確認 Excel 欄位名稱是否正確 (需包含：日期, 時間, Session ID, 課程名稱)</td></tr>';
-            return;
+    // 2. 渲染表格
+    const tbody = document.getElementById('tableBody');
+    let lastDate = "";
+
+    sessionData.forEach(item => {
+        // 插入日期標題
+        if (item.date !== lastDate) {
+            const trDate = document.createElement('tr');
+            trDate.className = 'date-header';
+            trDate.innerHTML = `<td colspan="4">📅 ${item.date}</td>`;
+            tbody.appendChild(trDate);
+            lastDate = item.date;
         }
 
-        // 3. 渲染表格
-        let lastDate = '';
+        // 插入課程列
+        const tr = document.createElement('tr');
+        tr.className = 'session-row';
+        tr.onclick = function() { toggleDetail(this); };
+        tr.innerHTML = `
+            <td class="col-time">${item.time}</td>
+            <td class="col-id">${item.id}</td>
+            <td class="col-title">${item.title}</td>
+            <td class="col-loc">${item.loc}</td>
+        `;
+        tbody.appendChild(tr);
 
-        sessions.forEach(item => {
-            // 檢查是否需要插入日期標題列
-            if (item.Date && item.Date !== lastDate) {
-                const trDate = document.createElement('tr');
-                trDate.className = 'date-header';
-                trDate.innerHTML = `<td colspan="4">📅 ${item.Date}</td>`;
-                tbody.appendChild(trDate);
-                lastDate = item.Date;
-            }
+        // 插入詳細資訊列 (預設隱藏)
+        const trDetail = document.createElement('tr');
+        trDetail.className = 'detail-row';
+        trDetail.innerHTML = `
+            <td colspan="4">
+                <div class="detail-content">
+                    <strong>📝 課程描述：</strong><br>${item.desc}
+                </div>
+            </td>
+        `;
+        tbody.appendChild(trDetail);
+    });
 
-            // 插入課程資料列
-            const tr = document.createElement('tr');
-            tr.className = 'session-row';
-            tr.innerHTML = `
-                <td class="col-time">${item.Time}</td>
-                <td class="col-id">${item.ID}</td>
-                <td class="col-name">${item.Name}</td>
-                <td class="col-loc">${item.Location}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-        
-        document.getElementById('status').innerText = `已成功載入 ${sessions.length} 個議程`;
+    function toggleDetail(row) {
+        const nextRow = row.nextElementSibling;
+        if (nextRow && nextRow.className === 'detail-row') {
+            nextRow.style.display = (nextRow.style.display === 'table-row') ? 'none' : 'table-row';
+        }
     }
 </script>
 
