@@ -3,236 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AWS re:Invent 2025 排程表 (Excel版)</title>
+    <title>AWS re:Invent 2025 行程表</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
-        /* 基礎設定 */
-        body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; margin: 0; padding: 10px; background: #f4f4f4; color: #333; }
-        
-        /* 標題與控制區 */
-        h1 { color: #232f3e; border-bottom: 3px solid #ff9900; padding-bottom: 10px; font-size: 1.4rem; margin-top: 0; }
-        .control-panel { background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 10px; position: sticky; top: 0; z-index: 100; }
-        
-        /* 下拉選單 */
-        label { font-weight: bold; display: block; margin-bottom: 5px; font-size: 1rem; }
-        select { font-size: 16px; padding: 10px; width: 100%; border: 1px solid #ccc; border-radius: 4px; background: #fff; }
-        
-        /* 表格容器 */
-        .table-container { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        
-        /* 表頭 */
-        th { background: #232f3e; color: white; padding: 12px 8px; text-align: left; font-size: 0.9rem; white-space: nowrap; }
-        
-        /* 表格內容 */
-        td { padding: 12px 8px; border-bottom: 1px solid #eee; vertical-align: top; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; cursor: pointer; }
-        tr:last-child td { border-bottom: none; }
-        
-        /* 亮顯樣式 */
-        .highlight { background: #fffbe6; border-left: 5px solid #ff9900; }
-        .highlight td { color: #232f3e; }
-        .highlight td:first-child { font-weight: bold; } /* 時間加粗 */
+        /* --- 基礎樣式 --- */
+        body {
+            font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
 
-        /* 隱藏的詳細說明列 */
-        .detail-row { display: none; background-color: #f9f9f9; }
-        .detail-cell { padding: 10px 15px; font-size: 0.9rem; color: #555; border-bottom: 1px solid #ddd; }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+
+        h1 {
+            color: #232f3e;
+            border-bottom: 3px solid #ff9900; /* AWS Orange */
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        /* --- 檔案上傳區 --- */
+        .upload-box {
+            background: #eef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px dashed #99c;
+            text-align: center;
+        }
+
+        /* --- 表格樣式 --- */
+        table {
+            width: 1000px; /* 固定寬度或 100% */
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #232f3e; /* AWS Dark Blue */
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+
+        /* --- 關鍵修改：日期標題列樣式 --- */
+        tr.date-header {
+            background-color: #e3f2fd !important; /* 淺藍色底 */
+            color: #0d47a1; /* 深藍色字 */
+            font-weight: bold;
+            font-size: 1.1em;
+            border-top: 2px solid #90caf9;
+        }
         
-        /* 載入中遮罩 */
-        #loading { text-align: center; padding: 20px; font-weight: bold; color: #666; }
+        tr.date-header td {
+            padding-top: 15px;
+            padding-bottom: 15px;
+        }
 
-        /* 欄位寬度與隱藏邏輯 */
-        /* 電腦版預設 */
-        th:nth-child(1) { width: 15%; } /* 時間 */
-        th:nth-child(2) { width: 8%; }  /* ID */
-        th:nth-child(3) { width: 30%; } /* 名稱 */
-        th:nth-child(4) { width: 20%; } /* 地點 */
-        th:nth-child(5) { width: 27%; } /* 說明 */
+        /* 內容行樣式 */
+        tr.session-row:hover {
+            background-color: #f5f5f5;
+        }
 
-        /* 手機版 (直式) */
+        /* 欄位寬度調整 */
+        .col-time { width: 15%; white-space: nowrap; }
+        .col-id { width: 10%; font-weight: bold; color: #d13212; }
+        .col-name { width: 40%; font-weight: bold; }
+        .col-loc { width: 20%; color: #666; font-size: 0.9em; }
+        
+        /* 手機響應式調整 */
         @media (max-width: 600px) {
-            th:nth-child(2), td:nth-child(2) { display: none; } /* 隱藏 ID */
-            th:nth-child(5), td:nth-child(5) { display: none; } /* 隱藏 說明 (改點擊展開) */
-            
-            th:nth-child(1) { width: 22%; } /* 時間 */
-            th:nth-child(3) { width: 45%; } /* 名稱 */
-            th:nth-child(4) { width: 33%; } /* 地點 */
-            
-            h1 { font-size: 1.2rem; }
-            td { padding: 10px 5px; }
+            th, td { display: block; width: 100%; }
+            tr.date-header { text-align: center; }
+            .col-time { color: #d13212; font-weight: bold; }
         }
     </style>
 </head>
 <body>
 
-    <div class="control-panel">
-        <label for="userSelect">👤 請選擇參加者：</label>
-        <select id="userSelect" onchange="renderTable()">
-            <option value="" disabled selected>載入資料中...</option>
-        </select>
-        <div style="font-size:0.8rem; color:#666; margin-top:5px; text-align:right;">(💡 手機版點擊議程可查看說明)</div>
+<div class="container">
+    <h1>AWS re:Invent 2025 個人行程表</h1>
+    
+    <div class="upload-box">
+        <p>請選擇您的 Excel (.xlsx) 或 CSV 檔案：</p>
+        <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" />
     </div>
 
-    <div class="table-container">
-        <div id="loading">正在讀取 Excel 檔案...</div>
-        <table id="scheduleTable" style="display:none;">
-            <thead>
-                <tr>
-                    <th>時間</th>
-                    <th>ID</th>
-                    <th>議程名稱</th>
-                    <th>地點</th>
-                    <th>中文說明</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody">
-            </tbody>
-        </table>
-    </div>
+    <div id="status" style="color:red; margin-bottom:10px;"></div>
 
-    <script>
-        let scheduleData = [];
-        let allAttendees = new Set(); // 使用 Set 自動過濾重複的人名
+    <table id="scheduleTable">
+        <thead>
+            <tr>
+                <th>時間</th>
+                <th>代號</th>
+                <th>課程名稱</th>
+                <th>地點</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <tr><td colspan="4" style="text-align:center; color:#999;">請上傳檔案以檢視行程...</td></tr>
+        </tbody>
+    </table>
+</div>
 
-        // 1. 讀取 Excel 檔案函式
-        async function loadExcel() {
-            try {
-                // 這裡指定要讀取的檔名，必須跟您的 Excel 檔名一樣
-                const response = await fetch('./schedule.xlsx'); 
-                
-                if (!response.ok) {
-                    throw new Error("無法找到 schedule.xlsx，請確認檔案是否已上傳且名稱正確。");
-                }
+<script>
+    document.getElementById('fileInput').addEventListener('change', handleFile, false);
 
-                const arrayBuffer = await response.arrayBuffer();
-                const workbook = XLSX.read(arrayBuffer, {type: 'array'});
-                
-                // 讀取第一個工作表
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                
-                // 轉換為 JSON
-                const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                
-                processData(jsonData);
+    function handleFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
 
-            } catch (error) {
-                document.getElementById('loading').innerHTML = "❌ 讀取失敗：<br>" + error.message + "<br><br>(請注意：此功能需上傳至伺服器才能運作，無法直接在電腦開啟)";
-                document.getElementById('loading').style.color = "red";
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            
+            // 讀取第一個工作表
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            
+            // 轉換為 JSON
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+            
+            renderTable(jsonData);
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        
+        // 1. 資料清洗與對應 (Mapping)
+        // 根據您的 CSV 欄位名稱進行對應
+        let sessions = data.map(row => {
+            // 嘗試抓取常見欄位名稱 (容錯處理)
+            return {
+                Date: row['日期'] || row['Date'] || '',
+                Time: row['時間'] || row['Time'] || '',
+                ID: row['Session ID'] || row['Code'] || '',
+                Name: row['課程名稱'] || row['Title'] || '',
+                Location: row['地點'] || row['Location'] || '',
+                Selected: row['已選取'] || '' // 如果有這個欄位，可以用來過濾
+            };
+        }).filter(item => item.ID); // 移除空行
+
+        // 2. 排序 (先按日期，再按時間)
+        sessions.sort((a, b) => {
+            if (a.Date !== b.Date) return a.Date.localeCompare(b.Date);
+            return a.Time.localeCompare(b.Time);
+        });
+
+        if (sessions.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">讀取不到資料，請確認 Excel 欄位名稱是否正確 (需包含：日期, 時間, Session ID, 課程名稱)</td></tr>';
+            return;
+        }
+
+        // 3. 渲染表格
+        let lastDate = '';
+
+        sessions.forEach(item => {
+            // 檢查是否需要插入日期標題列
+            if (item.Date && item.Date !== lastDate) {
+                const trDate = document.createElement('tr');
+                trDate.className = 'date-header';
+                trDate.innerHTML = `<td colspan="4">📅 ${item.Date}</td>`;
+                tbody.appendChild(trDate);
+                lastDate = item.Date;
             }
-        }
 
-        // 2. 處理資料
-        function processData(data) {
-            scheduleData = data;
-            
-            // 收集所有參加者名單
-            data.forEach(row => {
-                if (row.Users) {
-                    // 將 "王小明、李大華" 切割成陣列
-                    // 支援頓號、逗號或空格分隔
-                    const names = row.Users.toString().split(/[、,，\s]+/);
-                    names.forEach(name => {
-                        if (name && name.trim() !== "") {
-                            allAttendees.add(name.trim());
-                        }
-                    });
-                }
-            });
-
-            // 初始化選單
-            initMenu();
-            // 顯示表格
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('scheduleTable').style.display = 'table';
-            renderTable();
-        }
-
-        // 3. 初始化下拉選單
-        function initMenu() {
-            const select = document.getElementById('userSelect');
-            select.innerHTML = '<option value="ALL">📋 顯示所有議程</option>';
-            
-            // 將 Set 轉為 Array 並排序
-            const sortedAttendees = Array.from(allAttendees).sort();
-            
-            sortedAttendees.forEach(name => {
-                if (name === "全員") return; // "全員" 不需要出現在選單中，會自動處理
-                let option = document.createElement('option');
-                option.value = name;
-                option.textContent = "👤 " + name;
-                select.appendChild(option);
-            });
-        }
-
-        // 4. 渲染表格
-        function renderTable() {
-            const select = document.getElementById('userSelect');
-            const tbody = document.getElementById('tableBody');
-            const selectedUser = select.value;
-            
-            tbody.innerHTML = "";
-            let count = 0;
-
-            scheduleData.forEach(item => {
-                let showRow = false;
-                let highlightRow = false;
-
-                // 處理 Users 欄位 (可能為 undefined)
-                let itemUsers = item.Users ? item.Users.toString() : "";
-                let isAll = (item.All && (item.All === "X" || item.All === true || item.All === "TRUE")) || itemUsers.includes("全員");
-
-                if (selectedUser === "ALL") {
-                    showRow = true;
-                } else {
-                    // 檢查是否包含選取的人
-                    if (isAll || itemUsers.includes(selectedUser)) {
-                        showRow = true;
-                        highlightRow = true;
-                    }
-                }
-
-                if (showRow) {
-                    let tr = document.createElement('tr');
-                    if (highlightRow) tr.classList.add('highlight');
-
-                    // 點擊展開詳細說明
-                    tr.onclick = function() {
-                        var nextRow = this.nextElementSibling;
-                        if (nextRow && nextRow.className.indexOf('detail-row') > -1) {
-                            nextRow.style.display = (nextRow.style.display === 'table-row') ? 'none' : 'table-row';
-                        }
-                    };
-
-                    // 填入資料 (防止 undefined)
-                    tr.innerHTML = `
-                        <td>${item.Time || ''}</td>
-                        <td>${item.ID || ''}</td>
-                        <td>${item.Name || ''}</td>
-                        <td>${item.Location || ''}</td>
-                        <td>${item.Desc || ''}</td>
-                    `;
-                    tbody.appendChild(tr);
-
-                    // 建立詳細資訊列 (給手機版點擊用)
-                    if (item.Desc) {
-                        let trDetail = document.createElement('tr');
-                        trDetail.className = 'detail-row';
-                        trDetail.innerHTML = `<td colspan="5" class="detail-cell"><strong>📝 說明：</strong>${item.Desc}</td>`;
-                        tbody.appendChild(trDetail);
-                    }
-                    count++;
-                }
-            });
-
-            if (count === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#888;">沒有符合的議程</td></tr>';
-            }
-        }
-
-        // 啟動
-        loadExcel();
-
-    </script>
+            // 插入課程資料列
+            const tr = document.createElement('tr');
+            tr.className = 'session-row';
+            tr.innerHTML = `
+                <td class="col-time">${item.Time}</td>
+                <td class="col-id">${item.ID}</td>
+                <td class="col-name">${item.Name}</td>
+                <td class="col-loc">${item.Location}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        document.getElementById('status').innerText = `已成功載入 ${sessions.length} 個議程`;
+    }
+</script>
 
 </body>
 </html>
